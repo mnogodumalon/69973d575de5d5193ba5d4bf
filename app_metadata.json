@@ -1,0 +1,92 @@
+{
+  "appgroup_id": "69973d575de5d5193ba5d4bf",
+  "appgroup_name": "Marktplatz",
+  "apps": {
+    "artikel_einstellen": {
+      "app_id": "69973d478f87c3d22d5c7258",
+      "name": "Artikel einstellen",
+      "controls": {
+        "foto": {
+          "identifier": "foto",
+          "label": "Foto",
+          "type": "file",
+          "subtype": null,
+          "fulltype": "file",
+          "description": "An uploaded file. (Or `null`/`None`)\n\nThe field value will be the URL to download the file in the form `https://my.living-apps.de/files/69973d478f87c3d22d5c7258/data/<record-id>/<control-identifier>/<internal-id>` or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": false,
+          "in_expert_search": true
+        },
+        "hersteller": {
+          "identifier": "hersteller",
+          "label": "Hersteller",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": false,
+          "in_expert_search": true
+        },
+        "modell": {
+          "identifier": "modell",
+          "label": "Modell",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": false,
+          "in_expert_search": true
+        },
+        "farbe": {
+          "identifier": "farbe",
+          "label": "Farbe",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": false,
+          "in_expert_search": true
+        },
+        "groesse": {
+          "identifier": "groesse",
+          "label": "Gr\u00f6\u00dfe",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": false,
+          "in_expert_search": true
+        }
+      }
+    }
+  },
+  "metadata": {
+    "apps_list": [
+      "Artikel einstellen"
+    ]
+  }
+}
