@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { ArtikelEinstellen } from '@/types/app';
-import { LivingAppsService } from '@/services/livingAppsService';
+import { LivingAppsService, type ImageAnalysisResult } from '@/services/livingAppsService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,7 @@ import {
   EmptyMedia,
 } from '@/components/ui/empty';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Pencil, Trash2, Package, AlertCircle, ImageOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, AlertCircle, ImageOff, Sparkles, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Form data type
@@ -56,6 +56,8 @@ function ArtikelDialog({
 }) {
   const isEditing = !!artikel;
   const [submitting, setSubmitting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState<ArtikelFormData>({
     hersteller: '',
     modell: '',
@@ -72,8 +74,47 @@ function ArtikelDialog({
         farbe: artikel?.fields.farbe ?? '',
         groesse: artikel?.fields.groesse ?? '',
       });
+      setImagePreview(artikel?.fields.foto ?? null);
+    } else {
+      setImagePreview(null);
     }
   }, [open, artikel]);
+
+  // Handle image selection and AI analysis
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Full = event.target?.result as string;
+      setImagePreview(base64Full);
+
+      // Extract just the base64 data (remove data:image/...;base64, prefix)
+      const base64Data = base64Full.split(',')[1];
+
+      // Analyze with AI
+      setAnalyzing(true);
+      toast.info('Analysiere Bild mit KI...');
+
+      try {
+        const result = await LivingAppsService.analyzeImage(base64Data);
+        setFormData((prev) => ({
+          hersteller: result.hersteller || prev.hersteller,
+          modell: result.modell || prev.modell,
+          farbe: result.farbe || prev.farbe,
+          groesse: result.groesse || prev.groesse,
+        }));
+        toast.success('Felder automatisch ausgefüllt!');
+      } catch (err) {
+        toast.error('KI-Analyse fehlgeschlagen. Bitte manuell ausfüllen.');
+      } finally {
+        setAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -105,6 +146,53 @@ function ArtikelDialog({
           <DialogTitle>{isEditing ? 'Artikel bearbeiten' : 'Artikel einstellen'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Image Upload with AI Magic */}
+          <div className="space-y-2">
+            <Label>Foto (KI füllt Felder automatisch aus)</Label>
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                disabled={analyzing}
+              />
+              <div
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all ${
+                  imagePreview ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+                }`}
+              >
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Vorschau"
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    {analyzing && (
+                      <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                        <div className="flex items-center gap-2 text-white">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span className="text-sm font-medium">Analysiere...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-4 flex flex-col items-center gap-2 text-muted-foreground">
+                    <div className="p-3 rounded-full bg-primary/10">
+                      <Sparkles className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Foto hochladen</p>
+                      <p className="text-xs">KI erkennt Hersteller, Modell, Farbe & Größe</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="hersteller">Hersteller</Label>
             <Input
@@ -112,6 +200,7 @@ function ArtikelDialog({
               value={formData.hersteller}
               onChange={(e) => setFormData((prev) => ({ ...prev, hersteller: e.target.value }))}
               placeholder="z.B. Nike, Apple, Samsung"
+              disabled={analyzing}
             />
           </div>
           <div className="space-y-2">
@@ -121,6 +210,7 @@ function ArtikelDialog({
               value={formData.modell}
               onChange={(e) => setFormData((prev) => ({ ...prev, modell: e.target.value }))}
               placeholder="z.B. Air Max, iPhone 14"
+              disabled={analyzing}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -131,6 +221,7 @@ function ArtikelDialog({
                 value={formData.farbe}
                 onChange={(e) => setFormData((prev) => ({ ...prev, farbe: e.target.value }))}
                 placeholder="z.B. Schwarz"
+                disabled={analyzing}
               />
             </div>
             <div className="space-y-2">
@@ -140,6 +231,7 @@ function ArtikelDialog({
                 value={formData.groesse}
                 onChange={(e) => setFormData((prev) => ({ ...prev, groesse: e.target.value }))}
                 placeholder="z.B. M, 42, XL"
+                disabled={analyzing}
               />
             </div>
           </div>
@@ -147,7 +239,7 @@ function ArtikelDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting || analyzing}>
               {submitting ? 'Speichert...' : isEditing ? 'Speichern' : 'Einstellen'}
             </Button>
           </DialogFooter>
