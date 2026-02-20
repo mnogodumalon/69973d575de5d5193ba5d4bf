@@ -5,7 +5,13 @@
       "name": "2026-02-19 16:47 - Initial build: Marktplatz",
       "created_at": "2026-02-19T16:47:06.001070Z",
       "last_used": "2026-02-19T17:05:32.228673Z"
+    },
+    {
+      "id": "044accf7-2069-45d5-bee2-224547997659",
+      "name": "2026-02-20 10:14 - Bild Auto-Fill",
+      "created_at": "2026-02-20T10:14:25.632635Z",
+      "last_used": "2026-02-20T10:14:25.632635Z"
     }
   ],
-  "active_session": "3e273610-5a91-4424-98fa-a940ac27d011"
+  "active_session": "044accf7-2069-45d5-bee2-224547997659"
 }
