@@ -106,7 +106,7 @@ async def main():
         mcp_servers={"deploy_tools": deployment_server},
         permission_mode="acceptEdits",
         allowed_tools=["Bash", "Write", "Read", "Edit", "Glob", "Grep", "Task", "TodoWrite",
-        "mcp__deploy_tools__deploy_to_github"
+        "Skill", "mcp__deploy_tools__deploy_to_github"
         ],
         cwd="/home/user/app",
         model="claude-opus-4-5-20251101", #"claude-sonnet-4-5-20250929"

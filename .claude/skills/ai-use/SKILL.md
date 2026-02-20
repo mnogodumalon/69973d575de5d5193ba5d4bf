@@ -1,11 +1,22 @@
 ---
-name: ai-use
-description: Build AI-powered features into web applications using an OpenAI-compatible chat completions API. Covers classification, structured data extraction from text/photos/documents, summarization, and language translation. Use when the web application being built requires AI capabilities such as classifying content, extracting structured information, summarizing text, translating between languages, or analyzing files and images. All generated code must be pure JavaScript with no external dependencies.
+name: adding-ai-features
+description: Adds smart AI features to web applications — automatically sort or categorize content, extract information from text or uploaded photos and documents, summarize long text, and translate between languages. Use when the user wants the app to be smart or intelligent, or asks for auto-fill from photos, automatic categorization or sorting, content summarization, language translation, document reading, image recognition, receipt scanning, invoice parsing, or extracting information from files. Implements these features using a built-in AI endpoint. All generated code is pure JavaScript with no external dependencies.
 ---
 
-# AI Use - Chat Completions API
+# Adding AI Features
 
-Integrate AI-powered features into web applications using the LiteLLM chat completions endpoint. All code is pure JavaScript with **zero external dependencies**. The API follows the OpenAI chat completions format.
+Add smart features to web applications using the built-in AI endpoint. Pure JavaScript, zero external dependencies.
+
+## Contents
+
+- [API Configuration](#api-configuration) — Endpoint and model details
+- [Core Helper](#core-helper) — Reusable function all features build on
+- [Use Cases](#use-cases) — Categorize, extract data, summarize, translate
+- [Working with Files](#working-with-files) — Analyze images, PDFs, documents
+- [API Parameters Reference](#api-parameters-reference)
+- [Error Handling](#error-handling)
+- [Real-World Example: Auto-Fill from Photo](#real-world-example) — See [PHOTO_AUTOFILL.md](PHOTO_AUTOFILL.md)
+- [Guidelines](#guidelines)
 
 ## API Configuration
 
@@ -51,9 +62,9 @@ async function chatCompletion(messages, options = {}) {
 
 ## Use Cases
 
-### 1. Classification
+### 1. Automatic Categorization
 
-Classify text into predefined categories. Return the result as JSON for easy downstream processing.
+Automatically sort text into predefined categories (e.g. support tickets, feedback, content types).
 
 ```javascript
 async function classify(text, categories) {
@@ -83,9 +94,9 @@ const { category, confidence } = await classify(
 // { category: "bug", confidence: 0.97 }
 ```
 
-### 2. Structured Data Extraction
+### 2. Extract Information from Text
 
-Extract typed fields from unstructured text. Define the schema you need and let the model fill it.
+Pull structured fields out of free-form text (e.g. invoices, emails, descriptions).
 
 ```javascript
 async function extract(text, schemaDescription) {
@@ -122,9 +133,9 @@ const invoice = await extract(
 // { invoice_number: "2024-0892", vendor: "Acme Corp", date: "2025-03-15", ... }
 ```
 
-### 3. Summarization
+### 3. Summarize Text
 
-Condense text to key points. Control output length via the system prompt.
+Condense long text to key points.
 
 ```javascript
 async function summarize(text, { maxSentences = 3, language } = {}) {
@@ -149,7 +160,7 @@ Usage:
 const summary = await summarize(longArticleText, { maxSentences: 2 });
 ```
 
-### 4. Translation
+### 4. Translate Text
 
 Translate text between any language pair.
 
@@ -178,11 +189,7 @@ const english = await translate("お疲れ様です", "English", "Japanese");
 
 ## Working with Files
 
-Files (images, PDFs, documents) must be base64-encoded before sending. The API accepts them inline as data URIs.
-
-### Encoding Helpers
-
-From a `File` object (browser file input, drag-and-drop):
+Files must be base64 data URIs. Three encoding helpers:
 
 ```javascript
 function fileToDataUri(file) {
@@ -193,11 +200,7 @@ function fileToDataUri(file) {
     reader.readAsDataURL(file);
   });
 }
-```
 
-From a URL (fetch the resource first, then encode):
-
-```javascript
 async function urlToDataUri(url) {
   const res = await fetch(url);
   const blob = await res.blob();
@@ -208,11 +211,7 @@ async function urlToDataUri(url) {
     reader.readAsDataURL(blob);
   });
 }
-```
 
-From raw bytes (`Uint8Array` / `ArrayBuffer`):
-
-```javascript
 function bytesToDataUri(bytes, mimeType) {
   const uint8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   let binary = "";
@@ -223,9 +222,9 @@ function bytesToDataUri(bytes, mimeType) {
 }
 ```
 
-### Sending Images
+### Analyze Images
 
-Use the `image_url` content type with the base64 data URI:
+Use the `image_url` content type:
 
 ```javascript
 async function analyzeImage(imageDataUri, prompt) {
@@ -234,26 +233,16 @@ async function analyzeImage(imageDataUri, prompt) {
       role: "user",
       content: [
         { type: "text", text: prompt },
-        {
-          type: "image_url",
-          image_url: { url: imageDataUri },
-        },
+        { type: "image_url", image_url: { url: imageDataUri } },
       ],
     },
   ]);
 }
 ```
 
-Usage:
+### Read Documents (PDF, etc.)
 
-```javascript
-const dataUri = await fileToDataUri(selectedImageFile);
-const description = await analyzeImage(dataUri, "Describe what you see in this image.");
-```
-
-### Sending Documents (PDF, etc.)
-
-Use the `file` content type with the base64 data URI in `file_data`:
+Use the `file` content type:
 
 ```javascript
 async function analyzeDocument(fileDataUri, prompt) {
@@ -262,31 +251,16 @@ async function analyzeDocument(fileDataUri, prompt) {
       role: "user",
       content: [
         { type: "text", text: prompt },
-        {
-          type: "file",
-          file: { file_data: fileDataUri },
-        },
+        { type: "file", file: { file_data: fileDataUri } },
       ],
     },
   ]);
 }
 ```
 
-Usage:
+### Extract Information from Photos
 
-```javascript
-const pdfDataUri = await fileToDataUri(uploadedPdf);
-// pdfDataUri looks like: "data:application/pdf;base64,JVBERi0xLjQK..."
-
-const extractedData = await analyzeDocument(
-  pdfDataUri,
-  "Extract all line items from this invoice as JSON: [{description, quantity, unit_price, total}]"
-);
-```
-
-### Extracting Structured Data from Photos
-
-Combine file handling with structured extraction:
+Combine image analysis with structured data extraction:
 
 ```javascript
 async function extractFromPhoto(imageDataUri, schemaDescription) {
@@ -304,10 +278,7 @@ async function extractFromPhoto(imageDataUri, schemaDescription) {
       role: "user",
       content: [
         { type: "text", text: "Extract the data from this image." },
-        {
-          type: "image_url",
-          image_url: { url: imageDataUri },
-        },
+        { type: "image_url", image_url: { url: imageDataUri } },
       ],
     },
   ], { temperature: 0 });
@@ -316,22 +287,9 @@ async function extractFromPhoto(imageDataUri, schemaDescription) {
 }
 ```
 
-Usage:
+### Multipart Content Messages
 
-```javascript
-const receiptUri = await fileToDataUri(receiptPhoto);
-const receipt = await extractFromPhoto(receiptUri, `{
-  "store_name": "string",
-  "date": "YYYY-MM-DD",
-  "items": [{"name": "string", "price": number}],
-  "total": number,
-  "currency": "string"
-}`);
-```
-
-## Multipart Content Messages
-
-When combining text, images, and files in a single message, use an array of content parts:
+Combine text, images, and files in a single message:
 
 ```javascript
 const result = await chatCompletion([
@@ -406,193 +364,9 @@ const data = await withRetry(() =>
 );
 ```
 
-## Complete Integration Example
+## Real-World Example
 
-A self-contained module for a web app that classifies user feedback, extracts entities, and translates it:
-
-```javascript
-const AI_ENDPOINT = "https://my.living-apps.de/litellm/v1/chat/completions";
-const AI_MODEL = "default";
-
-async function chatCompletion(messages, options = {}) {
-  const res = await fetch(AI_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ model: AI_MODEL, messages, ...options }),
-  });
-  if (!res.ok) throw new Error(`AI API ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  return data.choices[0].message.content;
-}
-
-async function processFeedback(feedbackText) {
-  const [classification, entities, germanTranslation] = await Promise.all([
-    chatCompletion([
-      {
-        role: "system",
-        content:
-          'Classify this feedback. Respond as JSON: {"sentiment": "positive|negative|neutral", "category": "bug|feature|praise|question"}',
-      },
-      { role: "user", content: feedbackText },
-    ], { temperature: 0 }).then(JSON.parse),
-
-    chatCompletion([
-      {
-        role: "system",
-        content:
-          'Extract entities. Respond as JSON: {"people": [], "products": [], "issues": []}',
-      },
-      { role: "user", content: feedbackText },
-    ], { temperature: 0 }).then(JSON.parse),
-
-    chatCompletion([
-      {
-        role: "system",
-        content: "Translate to German. Output only the translation.",
-      },
-      { role: "user", content: feedbackText },
-    ]),
-  ]);
-
-  return { classification, entities, germanTranslation };
-}
-```
-
-## Real-World Example: Auto-Fill Form Fields from a Photo Upload
-
-### Use Case
-
-A user uploads a photo of a product (e.g. a piece of furniture, an electronic device, a vehicle) through a file input in a form. The moment the photo is selected, the application sends it to the multimodal LLM via the chat completions API. The LLM analyzes the image and returns structured data — manufacturer, model, color, size, condition, or any other relevant attributes. The application then automatically populates the corresponding form fields with the extracted values, saving the user from manual data entry.
-
-This pattern is useful for:
-- **Product listing forms** — upload a photo of an item and auto-fill brand, model, dimensions
-- **Inventory management** — photograph equipment and extract serial numbers, specs
-- **Insurance claims** — photograph damage and extract vehicle make, model, color, damage description
-- **Receipt/label scanning** — photograph a label and extract product details
-
-### Implementation Guide
-
-#### 1. Derive the extraction schema from the backend data model
-
-The form fields are typically defined by the backend data schema (e.g. a Living Apps app, a database table, or an API model). Reuse that schema directly — do not invent a separate one. Build a description object where each key is a field name from the backend and each value tells the LLM what to extract.
-
-```javascript
-const PRODUCT_SCHEMA = {
-  manufacturer: "string — brand or manufacturer name",
-  model: "string — product model or name",
-  color: "string — primary color",
-  size: "string — dimensions or size label (e.g. '42x30x15 cm', 'XL')",
-  condition: "string — one of: new, like-new, good, fair, poor",
-  additional_notes: "string — any other notable details visible in the photo",
-};
-```
-
-The keys (`manufacturer`, `model`, `color`, ...) must correspond to the actual field identifiers used by the backend and the form inputs. If the backend schema already provides field names, types, and constraints (e.g. allowed values for enums, date formats), incorporate those directly into the schema description so the LLM returns values the backend will accept without transformation.
-
-#### 2. Listen for file selection on the upload input
-
-Attach a `change` event listener to the file input. When a file is selected, read it as a base64 data URI and trigger the extraction.
-
-```javascript
-document.getElementById("photo-upload").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const dataUri = await fileToDataUri(file);
-  const extracted = await extractProductFromPhoto(dataUri);
-  fillFormFields(extracted);
-});
-```
-
-#### 3. Send the photo to the LLM with a structured extraction prompt
-
-Build the schema description as a string and pass it in the system prompt so the LLM knows exactly what JSON shape to return.
-
-```javascript
-async function extractProductFromPhoto(imageDataUri) {
-  const schemaString = JSON.stringify(PRODUCT_SCHEMA, null, 2);
-
-  const result = await chatCompletion([
-    {
-      role: "system",
-      content: [
-        "Analyze the product in the provided photo.",
-        "Extract information and respond ONLY with valid JSON matching this schema:",
-        schemaString,
-        "Use null for any field that cannot be determined from the image.",
-      ].join("\n"),
-    },
-    {
-      role: "user",
-      content: [
-        { type: "text", text: "Extract product details from this photo." },
-        { type: "image_url", image_url: { url: imageDataUri } },
-      ],
-    },
-  ], { temperature: 0 });
-
-  return JSON.parse(result);
-}
-```
-
-#### 4. Populate the form fields with the extracted data
-
-Map each key from the LLM response to the corresponding form input. Skip `null` values so partially extracted data does not overwrite existing user input.
-
-```javascript
-function fillFormFields(data) {
-  const fieldMapping = {
-    manufacturer: "input-manufacturer",
-    model: "input-model",
-    color: "input-color",
-    size: "input-size",
-    condition: "select-condition",
-    additional_notes: "textarea-notes",
-  };
-
-  for (const [key, elementId] of Object.entries(fieldMapping)) {
-    if (data[key] == null) continue;
-    const el = document.getElementById(elementId);
-    if (!el) continue;
-    el.value = data[key];
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-  }
-}
-```
-
-#### 5. Add loading state and error handling
-
-Show the user that analysis is in progress and handle failures gracefully.
-
-```javascript
-document.getElementById("photo-upload").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const status = document.getElementById("analysis-status");
-  status.textContent = "Analyzing photo...";
-  status.className = "status-loading";
-
-  try {
-    const dataUri = await fileToDataUri(file);
-    const extracted = await extractProductFromPhoto(dataUri);
-    fillFormFields(extracted);
-    status.textContent = "Fields updated from photo.";
-    status.className = "status-success";
-  } catch (err) {
-    console.error("Photo analysis failed:", err);
-    status.textContent = "Could not analyze photo. Please fill in fields manually.";
-    status.className = "status-error";
-  }
-});
-```
-
-#### Key considerations
-
-- **Dispatch `input` events** after setting values so that framework-managed state (React, Vue, etc.) picks up the changes. In React, you may need to use the native input setter via the prototype to trigger the synthetic event system.
-- **Derive the schema from the backend data model** rather than defining it from scratch. The backend already knows the field names, types, and constraints — reuse them so the LLM returns values the backend will accept.
-- **Resize large images** before encoding to base64 to reduce payload size and API latency. A 1024px-wide version is usually sufficient for product identification.
-- **Let users review and edit** the auto-filled values. AI extraction is not perfect — always treat it as a suggestion, not a final answer.
+**Photo auto-fill**: Upload a product photo, extract structured data, auto-populate form fields. See [PHOTO_AUTOFILL.md](PHOTO_AUTOFILL.md) for complete implementation guide.
 
 ## Guidelines
 
